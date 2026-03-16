@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required)
+    //   - age: number (optional)
+    //   - weight: number (optional)
+    //   - fitnessGoal: string (optional)
+    //   - injuries: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: users/{uid}/activities
+    // Document ID: {activityId}
+    // Fields:
+    //   - uid: string (required)
+    //   - type: string (required, enum: workout, meal, health)
+    //   - description: string (required)
+    //   - timestamp: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             (!('age' in data) || (data.age is number && data.age >= 0 && data.age < 150)) &&
+             (!('weight' in data) || (data.weight is number && data.weight >= 0 && data.weight < 500)) &&
+             (!('fitnessGoal' in data) || (data.fitnessGoal is string && data.fitnessGoal.size() < 500)) &&
+             (!('injuries' in data) || (data.injuries is string && data.injuries.size() < 1000));
+    }
+
+    function isValidActivity(data) {
+      return data.keys().hasAll(['uid', 'type', 'description', 'timestamp']) &&
+             data.uid == request.auth.uid &&
+             data.type in ['workout', 'meal', 'health'] &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 5000 &&
+             data.timestamp is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isOwner(uid) && isValidUser(request.resource.data) && 
+                      request.resource.data.uid == resource.data.uid;
+      
+      match /activities/{activityId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidActivity(request.resource.data);
+        allow update: if isOwner(uid) && isValidActivity(request.resource.data) &&
+                        request.resource.data.uid == resource.data.uid;
+        allow delete: if isOwner(uid);
+      }
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

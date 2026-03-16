@@ -1,0 +1,5 @@
+{
+  "name": "LifeGuide AI",
+  "description": "A multimodal personal life assistant that can see, hear, and guide you in real time using Gemini Live API.",
+  "requestFramePermissions": ["camera", "microphone"]
+}

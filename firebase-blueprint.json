@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user personal information and preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "name": { "type": "string", "description": "The user's display name." },
+        "age": { "type": "number", "description": "The user's age." },
+        "weight": { "type": "number", "description": "The user's weight in kg." },
+        "fitnessGoal": { "type": "string", "description": "The user's primary fitness goal." },
+        "injuries": { "type": "string", "description": "Any existing injuries or health conditions." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created." }
+      },
+      "required": ["uid", "name"]
+    },
+    "ActivityLog": {
+      "title": "Activity Log",
+      "description": "Stores logs of user activities like workouts or meals.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user ID." },
+        "type": { "type": "string", "enum": ["workout", "meal", "health"], "description": "The type of activity." },
+        "description": { "type": "string", "description": "Details about the activity." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the activity occurred." }
+      },
+      "required": ["uid", "type", "description", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles."
+    },
+    "/users/{uid}/activities/{activityId}": {
+      "schema": "ActivityLog",
+      "description": "Subcollection of activities for a specific user."
+    }
+  }
+}
